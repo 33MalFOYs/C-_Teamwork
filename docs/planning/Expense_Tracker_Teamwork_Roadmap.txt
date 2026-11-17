@@ -1,0 +1,307 @@
+PERSONAL EXPENSE TRACKER - TEAMWORK ROADMAP
+
+PURPOSE
+Work together to build the project in the same four phases as the AI roadmap:
+1. Requirements, project setup, and design.
+2. OOP, singly linked list, and input validation.
+3. MySQL integration and persistent CRUD.
+4. Reports, budgets, CSV, testing, and documentation.
+
+This plan is for team members. The AI roadmap provides additional technical
+implementation details. Neither roadmap means the application is already built.
+Suggested schedule: one phase per week; adjust to your actual deadline.
+
+TEAM ROLES - THREE MEMBERS
+Replace the blanks with your names. All three members contribute in every phase.
+
+Member A: ____________________  OOP, linked-list, and CSV lead
+  Owns Expense, ExpenseNode, ExpenseList, FileManager, and sample CSV files.
+  Finish the SLL foundation in Phase 2, then develop CSV during Phase 3 so
+  Phase 4 is mainly integration and verification rather than starting CSV.
+Member B: ____________________  Database, build, and verification lead
+  Owns DatabaseManager, schema, connector/build setup, and test coordination.
+Member C: ____________________  CLI, integration, and documentation lead
+  Owns ExpenseTracker, main.cpp, menus, report/budget presentation, task board,
+  and README assembly. Each member supplies notes for their own component.
+
+Everyone tests and documents their own work. B coordinates the test checklist;
+C coordinates integration and documentation. Neither handles all fixes alone.
+Review rotation: A reviews C, C reviews B, and B reviews A.
+
+AGREED PROJECT SCOPE
+- C++ CLI for one user and one selected currency.
+- Classes/objects, encapsulation, overloaded constructors and methods.
+- A manually implemented singly linked list (SLL), not DLL or CLL.
+- Expense CRUD: add, view/search, update, and delete.
+- MySQL on local MAMP is the permanent store; Workbench manages the database.
+- CSV import AND export using C++ file streams demonstrate file I/O.
+- Search by ID, category filtering, and inclusive date-range filtering.
+- Monthly spending totals, category totals, and monthly budgets.
+- GUI is a future improvement, outside these four phases.
+
+SHARED TECHNICAL AGREEMENTS
+Agree on these in Phase 1 and write them in the README:
+- Use C++17 unless the course or existing project requires another version.
+- Expense fields: ID, amount, category, date, description.
+- Date format: YYYY-MM-DD, validated as a real calendar date.
+- Money: integer cents in C++; DECIMAL(12,2) in MySQL. Use one currency.
+- Positive expense amounts; nonnegative budget amounts; validate field lengths
+  and numeric ranges. Do not parse monetary values through floating point.
+- Constructor overloading: default and parameterized Expense constructors.
+- Method overloading: searchExpense(int id) and
+  searchExpense(const std::string& category), with appropriate result types.
+- ExpenseNode contains an Expense and one next pointer.
+- ExpenseList owns its nodes and releases them safely; prevent unsafe copying.
+- DatabaseManager owns SQL operations, FileManager owns CSV operations, and
+  ExpenseTracker coordinates them. Avoid SQL embedded in menu code.
+- Startup loads MySQL expenses into the SLL.
+- A mutation updates MySQL first, then the SLL only after database success.
+- If a committed change cannot be reflected in memory, reload before continuing
+  operations that depend on those records. Never report a failed save as success.
+- MySQL generates IDs, including IDs for CSV imports.
+- Agree on method signatures, ownership of returned records, and error reporting
+  before members implement calls into one another's classes.
+
+DATABASE AGREEMENT
+Database: expense_tracker
+expenses:
+  expense_id INT PRIMARY KEY AUTO_INCREMENT
+  amount DECIMAL(12,2) NOT NULL
+  category VARCHAR(50) NOT NULL
+  expense_date DATE NOT NULL
+  description VARCHAR(255) NOT NULL
+budgets:
+  budget_id INT PRIMARY KEY AUTO_INCREMENT
+  budget_month INT NOT NULL
+  budget_year INT NOT NULL
+  budget_amount DECIMAL(12,2) NOT NULL
+  UNIQUE (budget_year, budget_month)
+Validate month 1-12 and the agreed supported year range in the application.
+
+Each developer may run their own MAMP database using the same schema and sample
+data. localhost refers to that member's computer, not another member's server.
+Share schema scripts and configuration examples, not passwords or database files.
+Inspect the actual MAMP MySQL port, server version, and credentials. Do not assume
+them. Workbench and the C++ app connect separately to the same MySQL server.
+Choose a connector/API compatible with the server, compiler, and architecture.
+
+PHASE 1 - REQUIREMENTS, PROJECT SETUP, AND DESIGN
+Suggested timing: Week 1
+Goal: agree on interfaces and produce a buildable project skeleton.
+
+Member A
+[ ] Define Expense fields, validation rules, and overloaded constructors.
+[ ] Draft ExpenseNode and ExpenseList interfaces and node ownership rules.
+[ ] Draw a simple class diagram and SLL diagram for the team's explanation.
+
+Member B
+[ ] Establish compiler/build settings and connector compatibility requirements.
+[ ] Draft sql/schema.sql for expenses and budgets without destructive resets.
+[ ] Verify the local MAMP connection in Workbench where available.
+[ ] Provide a secret-free configuration example and setup notes.
+
+Member C
+[ ] Draft the menu flow and ExpenseTracker interface.
+[ ] Create main.cpp and a runnable menu skeleton with a clean exit.
+[ ] Agree with A and B on how the application calls list/database methods.
+
+Additional shared assignments
+[ ] A: Draft FileManager interfaces and agree on the CSV format with B and C.
+[ ] B: Create a verification checklist covering the proposal's requirements.
+[ ] C: Start the README and task board; record owners and review assignments.
+
+Team handoff and dependencies
+- Review all public interfaces together before implementation begins.
+- A publishes the Expense data contract so B and C use the same fields/types.
+- B publishes build instructions so all members can compile the same skeleton.
+- C confirms how errors and success messages reach the CLI.
+- C records the approved decisions and unresolved questions.
+
+Phase completion gate
+[ ] Skeleton compiles and the menu opens and exits.
+[ ] Six class responsibilities and database tables are agreed.
+[ ] Each member can build locally, or a specific setup blocker is recorded.
+[ ] Database connection status is recorded accurately, including pending checks.
+
+PHASE 2 - OOP, SINGLY LINKED LIST, AND INPUT VALIDATION
+Suggested timing: Week 2
+Goal: implement working expense CRUD in memory.
+
+Member A
+[ ] Implement Expense, ExpenseNode, and ExpenseList.
+[ ] Implement insertion, traversal, overloaded search, update, deletion, clear,
+    and safe cleanup. Test empty, single-node, and multiple-node lists.
+[ ] Provide callable methods and sample records for C to integrate.
+
+Member B
+[ ] Maintain the shared build and resolve connector setup issues early.
+[ ] Prepare DatabaseManager interfaces and a connection smoke check if possible.
+[ ] Prepare isolated database test data for Phase 3.
+[ ] Review agreement between C++ amount/date fields and SQL types.
+
+Member C
+[ ] Connect the CLI to A's in-memory CRUD methods.
+[ ] Implement readable expense display and robust input handling.
+[ ] Confirm deletion; preserve records after canceled or invalid actions.
+[ ] Handle invalid menu input and end-of-input without infinite loops.
+
+Additional shared assignments
+[ ] B: Review list edge cases with A and CLI validation with C.
+[ ] A: After the SLL works, begin CSV parsing/formatting if time permits.
+[ ] A: Prepare sample files with commas, quotes, invalid dates, and bad amounts.
+[ ] C: Record reproducible bugs and update usage instructions with team input.
+
+Team handoff and dependencies
+- A's working SLL methods unblock C's complete in-memory workflow.
+- A can test CSV parsing independently; database import is integrated later.
+- Phase 2 temporary IDs must be replaced by MySQL-generated IDs in Phase 3.
+- Clearly label this phase as nonpersistent; closing the app loses these records.
+
+Phase completion gate
+[ ] Add, view, search, update, and delete work through the CLI.
+[ ] Head, middle, tail, and only-node deletion work; memory is released.
+[ ] Invalid amounts/dates and nonexistent IDs produce useful feedback.
+[ ] Encapsulation and constructor/method overloading can be demonstrated.
+[ ] The combined project builds and the team demonstrates one complete session.
+
+PHASE 3 - MYSQL INTEGRATION AND PERSISTENT CRUD
+Suggested timing: Week 3
+Goal: preserve records across sessions with MySQL as the authoritative store.
+
+Member A
+[ ] Support loading database records into the SLL without duplicate/stale nodes.
+[ ] Ensure list operations use the IDs generated by MySQL.
+[ ] Help C keep the list consistent after successful database changes.
+
+Member B
+[ ] Implement DatabaseManager connection, prepared CRUD statements, and cleanup.
+[ ] Load configuration outside committed source; never commit passwords.
+[ ] Return generated IDs and clear operation results/errors to C.
+[ ] Implement budget loading/saving and transaction support for CSV import.
+[ ] Apply the schema without deleting existing user data.
+
+Member C
+[ ] Connect startup to MySQL and populate the SLL through A's interfaces.
+[ ] Replace temporary CRUD with database-first persistent operations.
+[ ] Update the list only after successful database writes.
+[ ] Handle connection/write failures without silently switching to unsaved mode.
+
+Additional shared assignments
+[ ] B and C: Verify CLI operations against rows viewed in Workbench.
+[ ] B coordinates; everyone tests restart persistence, IDs, and failed operations.
+[ ] A: Implement and independently test CSV parsing, validation, and formatting.
+[ ] A: Prepare FileManager integration with B's transaction/import interface.
+[ ] B: Supply verified connector/setup notes for C to include in the README.
+
+Team handoff and dependencies
+- B's database operation results and generated IDs unblock persistent CLI CRUD.
+- A and C jointly check that database failures leave the SLL unchanged.
+- A and B agree on all-or-nothing import transaction behavior before Phase 4.
+- Use isolated test data; do not drop tables or erase another member's records.
+
+Phase completion gate
+[ ] CLI changes are visible in MySQL and survive a restart.
+[ ] App and Workbench point to the intended MAMP server and database.
+[ ] Failed connection/write tests do not display false success or corrupt memory.
+[ ] IDs remain unique after deletion and insertion.
+[ ] Shared setup instructions reproduce a working build and connection.
+
+PHASE 4 - REPORTS, BUDGETS, CSV, TESTING, AND DOCUMENTATION
+Suggested timing: Week 4
+Goal: complete all proposal features and prepare the team demonstration.
+
+Member A
+[ ] Implement SLL filtering by category and inclusive date range.
+[ ] Implement monthly/year and category totals over the SLL.
+[ ] Check calculations against small datasets with known expected totals.
+
+Member B
+[ ] Finalize persistent budgets, unique per month/year.
+[ ] Integrate transactional CSV insertion with A; generate fresh expense IDs.
+[ ] Test rollback on import failure and finish database troubleshooting notes.
+
+Member C
+[ ] Connect reports, date-range filters, and budget actions to the menu.
+[ ] Display remaining budget = budget amount - monthly spending.
+[ ] Distinguish no budget, zero budget, and overspending.
+[ ] Connect CSV import/export actions and finalize the complete CLI flow.
+
+Member A - CSV completion (continued)
+[ ] Finish CSV import/export with fstream and documented headers:
+    expense_id,amount,category,expense_date,description
+[ ] Escape commas and quotes correctly; support quoted line breaks or reject
+    them explicitly without silently corrupting data.
+[ ] Validate the entire import before writing. Report invalid row locations.
+[ ] Ignore incoming IDs; insert valid rows in one transaction using B's methods.
+    Roll back on failure and refresh the SLL after successful commit.
+[ ] Explain that importing the same file again creates additional records.
+[ ] Handle unreadable input and unwritable output; confirm file overwrite.
+[ ] A supplies sample CSV and CSV notes; B supplies test results; C assembles
+    the README and demonstration guide.
+
+Team handoff and dependencies
+- A supplies report results to C; B supplies persistent budget values.
+- A parses/validates CSV, B performs the transaction, and C coordinates refresh.
+- All members test the integrated program and fix defects in their components.
+- Each member writes the documentation for their own implementation; C assembles it.
+
+Phase completion gate
+[ ] Monthly totals include the year; date ranges validate start <= end.
+[ ] Budget results remain correct after expense updates/deletions and restart.
+[ ] CSV round trips preserve values with commas/quotes and create new IDs.
+[ ] Invalid imports and database failures never leave partially imported data.
+[ ] Clean build and complete end-to-end demonstration succeed.
+[ ] README and setup instructions match the final implementation.
+
+TEAM WORKFLOW THROUGHOUT ALL PHASES
+1. Keep a shared task board: To do -> In progress -> Review -> Done.
+2. Give every task one owner, a reviewer, and a concrete completion check.
+3. Use short feature branches, such as feature/sll-search or feature/csv-export.
+   Keep main buildable. Do not merge work that breaks the agreed build.
+4. Before editing a shared interface or another member's file, coordinate with
+   its owner and explain which callers need changes.
+5. Make focused commits. Review and integrate small working pieces throughout
+   each phase instead of waiting until the final day.
+6. At each working session, share: finished work, next task, and blockers.
+7. Mid-phase, run an integration check. At phase end, hold a short demonstration
+   against the completion gate and record remaining defects.
+8. Keep credentials, build output, and local machine settings out of Git.
+9. If using AI, review its code, run it, and ensure the responsible member can
+   explain it. Follow any course policy for AI assistance and attribution.
+10. Before submission, test from a fresh checkout with the documented setup.
+
+TASK CARD TEMPLATE
+Task:
+Phase:
+Owner:
+Reviewer:
+Depends on:
+Files/components affected:
+Expected behavior:
+Completion check:
+Actual test result:
+Status/blocker:
+
+FINAL SUBMISSION CHECKLIST
+[ ] Complete C++ source and reproducible build configuration.
+[ ] SQL schema for expenses and budgets.
+[ ] Configuration example with no real passwords.
+[ ] Sample CSV containing fictional records.
+[ ] Test checklist/results and documented limitations.
+[ ] README covering build, MAMP/Workbench setup, connector, usage, and CSV format.
+[ ] Requirement mapping: OOP, overloading, encapsulation, SLL, CRUD, file I/O,
+    CLI, and MySQL integration.
+[ ] Contribution record describing what each member implemented and reviewed.
+[ ] Every member understands the complete data flow and their own component.
+
+SUGGESTED TEAM PRESENTATION
+A: Explain Expense, OOP, the singly linked list, and CSV import/export.
+B: Explain MAMP/MySQL, schema, prepared CRUD, persistence, and test evidence.
+C: Demonstrate add/search/update/delete, reports, and budgets through the CLI.
+Together: answer how data moves between the CLI, SLL, MySQL, and CSV files.
+
+REQUIREMENT NOTE
+This plan follows the proposal's SLL and CSV import/export choices. If the
+instructor requires all linked-list types or file-based startup storage, revise
+the scope together before adding those requirements.
+

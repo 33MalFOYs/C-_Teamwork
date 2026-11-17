@@ -1,0 +1,17 @@
+# Phase 3: copy to the ignored config.local and fill in VERIFIED server details.
+# File settings are overridden by environment variables with the same names.
+# Never commit real credentials. Account passwords are separate from DB access.
+# Plain KEY=value format: no shell expansion, quoting, escapes, or inline comments.
+# Password is everything after '=' exactly, including spaces. Do not add quotes.
+# Explicit empty password is supported only when the selected account uses one.
+
+# Verify these fields against the actual MAMP MySQL server; no port/user defaults.
+EXPENSE_DB_HOST=
+EXPENSE_DB_PORT=
+EXPENSE_DB_NAME=expense_tracker
+EXPENSE_DB_USER=
+EXPENSE_DB_PASSWORD=
+
+# Application-wide convention, fixed for this version: USD, two decimal places.
+# There is no currency conversion.
+EXPENSE_CURRENCY=USD

@@ -1,0 +1,5 @@
+expense_id,amount,category,expense_date,description
+1,10.00,Food,2026-12-28,"Fictional lunch, Monday"
+2,20.00,Transport,2026-12-30,"Fictional taxi ""demo"" fare"
+3,5.00,Food,2027-01-03,Fictional Sunday snack
+4,99.00,Other,2027-01-04,Fictional next Monday expense

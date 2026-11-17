@@ -1,0 +1,12 @@
+/build*/
+/.tools/
+*.tmp.html
+*.tmp.xml
+/config.local
+/test spend.csv
+/.env
+/.env.*
+!/config.example
+/CMakeUserPresets.json
+*.user
+

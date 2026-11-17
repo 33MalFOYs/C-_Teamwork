@@ -1,0 +1,390 @@
+PERSONAL EXPENSE TRACKER - AI IMPLEMENTATION ROADMAP
+
+PURPOSE
+Build a C++ expense tracker with a desktop GUI, local account login, weekly
+reports, and expense date filters in four phases. Retain a functional CLI for
+the assignment. This file is an implementation brief for an
+AI coding assistant. It does not mean the application has already been built.
+
+UPDATE AND SCOPE NOTE - 2026-11-16
+The GUI, login, weekly reports, and date filters below are required extensions.
+This roadmap retains its existing MySQL/MAMP and expense SLL design. The newer
+Algorithm_CPP_Proposal.docx instead specifies SQLite, income and expenses, an
+SLL for categories, a DLL for transactions, and a CLL for months. Do not claim
+this roadmap fully matches that newer proposal. Confirm the implementation
+baseline before starting database/list code if implementing against that proposal;
+do not silently migrate databases or mix incompatible designs.
+
+HOW THE AI SHOULD USE THIS ROADMAP
+1. Inspect the existing project and applicable repository instructions first.
+2. Implement phases in order. Reuse working code and preserve user changes.
+3. If asked to implement one phase, finish that phase and report its results.
+   If asked to implement the whole project, continue through all four phases.
+4. At each phase, build and run the relevant checks before reporting completion.
+5. Report changed files, commands run, results, and any unresolved blockers.
+   Never claim a test or database connection succeeded without running it.
+6. Ask for missing local database credentials only when needed. Do not invent
+   credentials, hardcode secrets, or commit local credentials to Git.
+7. Keep the implementation understandable for students to explain and defend.
+   Implement the GUI and login locally. Cloud hosting and a web server are not
+   required. Complete functional behavior, not just decorative mockup screens.
+
+FIXED PROJECT REQUIREMENTS
+- Language: C++ (use C++17 unless the existing project requires otherwise).
+- Interfaces: Qt 6 Widgets desktop GUI and a menu-driven CLI sharing services.
+  Use CMake and a Qt kit compatible with the chosen compiler and architecture.
+- Accounts: local registration, login, logout, and per-user expense/budget data.
+- OOP: classes and objects, encapsulation, constructor overloading, and method
+  overloading, with clear examples in the code and documentation.
+- Data structure: a manually implemented singly linked list (SLL).
+  ExpenseNode contains an Expense and one next pointer. Do not replace the
+  required SLL with a vector, std::list, DLL, or circular linked list.
+- Operations: create, read, update, and delete expenses.
+- Primary permanent storage: MySQL running locally through MAMP.
+- Database management tool: MySQL Workbench.
+- File I/O: CSV import AND export using C++ file streams.
+- Reports: weekly and monthly totals, category totals, and expense date filters.
+- Budgets: set a monthly spending limit and calculate the remaining amount.
+- One selected currency throughout the first version; no currency conversion.
+- GUI: required, including login, dashboard, expense table/form, and reports.
+
+ARCHITECTURE AND DATA RULES
+MySQL is the authoritative permanent store. The SLL holds the working records
+in memory for searching, filtering, display, and calculations.
+
+Startup: connect to MySQL -> show login -> authenticate -> load only that user's
+expenses into the SLL -> open dashboard or CLI menu.
+Mutation: validate input -> execute database operation -> update SLL only after
+database success. Use the generated database ID when inserting a new expense.
+If refreshing memory after a committed change fails, report the problem and
+reload before allowing further operations that depend on the cached records.
+Database failure must not be presented as a successful save.
+
+Workbench and the C++ program independently connect to the same MAMP MySQL
+server. The application does not connect through Workbench. Apache and PHP
+are not required for this C++ application's database connection.
+
+Store money as integer minor units (such as cents) in C++ and DECIMAL(12,2)
+in MySQL. Parse and format decimal amounts without floating-point rounding.
+Validate positive expense amounts, nonnegative budget amounts, database range,
+required fields, text lengths, and real calendar dates in YYYY-MM-DD format.
+
+Keep business logic independent of GUI widgets. Both GUI and CLI call the same
+authentication, CRUD, validation, filtering, report, and file services. Every
+service operation requires an authenticated session. Scope database reads,
+updates, deletes, budgets, reports, and exports by the session's user_id. Obtain
+user_id from the session, never from an editable form or imported CSV column.
+The SLL contains only the signed-in user's records. Clear it, cached reports,
+selected rows, and open financial forms on logout or account switch.
+
+GUI AND LOGIN BEHAVIOR
+- Login screen: username, masked password, show/hide toggle, Sign in, and
+  Create account. Enter submits. Show inline validation and database errors.
+- Registration: username, password, confirmation; reject duplicate usernames.
+  Define one username normalization rule and enforce it with a unique database
+  key. Document a minimum password length and do not silently truncate passwords.
+- Use a maintained password-hashing library such as libsodium with Argon2id.
+  Store only its encoded salted password hash. Do not store plaintext passwords,
+  invent cryptography, or use plain SHA-256/std::hash for password storage.
+- Successful login opens the dashboard. Failed authentication gives a generic
+  invalid-credentials message; do not log passwords. Disable repeat submission
+  while authentication runs and apply a short retry delay after repeated failures.
+- No hardcoded demo login bypass. Restart requires login again. Account passwords
+  are separate from the MySQL connection credentials.
+- Dashboard: current user's name, this week's expenses, this month's expenses,
+  budget remaining, and navigation to Expenses, Reports, Budgets, CSV, Logout.
+- Expense page: readable table, Add/Edit/Delete actions, date/category filters,
+  visible filtered total and count, and a clear empty-state message.
+- Expense form: amount, category, calendar date picker, description, Save/Cancel.
+  Confirm deletion. Refresh the table and affected totals after successful writes.
+- Reports page: selectable week/month, summary totals, category breakdown,
+  and seven daily rows for weekly reports. Charts are optional; accurate totals
+  and a readable table are required.
+- Use layouts that resize, visible labels, keyboard tab order, and useful error
+  messages. Keep slow database/password operations off the GUI event loop using
+  safe worker-owned resources. Do not share a connection across threads unsafely.
+
+DATE FILTER CONTRACT
+- Offer All dates, Exact date, Custom range, This week, and This month.
+- Use calendar-date fields with YYYY-MM-DD values; boundaries are inclusive.
+  Exact date means start_date == end_date. Require both custom endpoints and
+  reject invalid dates or start_date > end_date without changing the active view.
+- Define This week as Monday through Sunday using the computer's local date.
+  Date-only expenses have no timezone conversion.
+- Combine category and date criteria using AND, then display only matching
+  expenses belonging to the authenticated user. Clear filters restores all of
+  that user's expenses. Refresh retains the selected filters.
+- Apply the same predicate to table rows, record counts, totals, and filtered
+  CSV exports. Clearly distinguish Export filtered records from Export all.
+- Keep dashboard weekly/monthly totals independent of the expense-table filters
+  and label their periods. A filtered table total is not a monthly budget total.
+
+WEEKLY REPORT CONTRACT
+- Let the user pick a date; report the Monday-Sunday week containing it.
+- Provide Previous week, Next week, and This week. Display the actual start/end
+  dates, including years, rather than relying on an ambiguous week number.
+- Report total expenses, transaction count, seven daily totals, category totals,
+  and average per day = weekly total / 7, rounded only for display.
+- Include zero-spending days. A week with no records shows zero totals and a
+  helpful message. Weeks may cross month/year boundaries; do not split them.
+- Daily totals and category totals must each sum to the weekly total. Calculate
+  with integer cents. Do not add a weekly budget: the existing budget is monthly.
+- Allow CSV export of the selected weekly summary with its date range and currency.
+  Keep this report CSV separate from the transaction import format.
+
+CLASSES
+- Expense: private ID, amount, category, date, and description; validated public
+  access methods; default and parameterized constructors.
+- ExpenseNode: an Expense object and a next pointer.
+- ExpenseList: SLL ownership, insertion, traversal, search, update, deletion,
+  filtering, totals, and cleanup. Prevent unsafe shallow copies of owned nodes.
+- DatabaseManager: connection lifecycle, schema access, parameterized CRUD,
+  budget queries, and database error handling.
+- FileManager: CSV parsing, validation, import, and export using fstream.
+- ExpenseTracker: menu, input handling, and coordination between components.
+- User: account ID and username; never carry plaintext passwords in cached data.
+- AuthService and Session: registration, password verification, current user,
+  and logout. DatabaseManager provides scoped persistence operations.
+- ExpenseFilter: validated date/category criteria shared by both interfaces.
+- ReportService: weekly/monthly aggregation over the user's expense records.
+- LoginWindow, MainWindow, ExpensePage, and ReportsPage: Qt presentation only;
+  call shared services rather than duplicating SQL or financial calculations.
+
+Demonstrate method overloading with methods such as:
+  searchExpense(int id)
+  searchExpense(const std::string& category)
+Use suitable return types: ID search finds at most one record; category search
+may find many. Document the difference.
+
+PHASE 1 - REQUIREMENTS, PROJECT SETUP, AND DESIGN
+Objective: establish a buildable skeleton and a concrete database design.
+
+Tasks
+1. Inspect the compiler, build tools, and existing files. Use CMake if there is
+   no established build system. Document the chosen compiler and build steps.
+2. Create a small source layout, for example:
+   CMakeLists.txt
+   include/ and src/ for core classes and services
+   src/main.cpp
+   sql/schema.sql
+   config.example or equivalent documented environment settings
+   tests/
+   README.md
+   src/gui/ for Qt windows and forms
+   src/services/ for authentication, filtering, and reporting
+   Separate GUI and CLI entry points linked to the shared core library
+3. Define class responsibilities and public interfaces before implementing
+   complete behavior. Create a basic menu loop with clean exit behavior.
+4. Design these tables in schema.sql without destructive resets:
+   users:
+     user_id INT PRIMARY KEY AUTO_INCREMENT
+     username VARCHAR(64) NOT NULL UNIQUE
+     password_hash VARCHAR(255) NOT NULL
+   expenses:
+     expense_id INT PRIMARY KEY AUTO_INCREMENT
+     user_id INT NOT NULL REFERENCES users(user_id)
+     amount DECIMAL(12,2) NOT NULL
+     category VARCHAR(50) NOT NULL
+     expense_date DATE NOT NULL
+     description VARCHAR(255) NOT NULL
+   budgets:
+     budget_id INT PRIMARY KEY AUTO_INCREMENT
+     user_id INT NOT NULL REFERENCES users(user_id)
+     budget_month INT NOT NULL
+     budget_year INT NOT NULL
+     budget_amount DECIMAL(12,2) NOT NULL
+     UNIQUE (user_id, budget_year, budget_month)
+   Add an index on expenses(user_id, expense_date). Use explicit FOREIGN KEY
+   constraints supported by the installed MySQL version. If data already exists,
+   back it up and agree on its account ownership before applying a migration;
+   never silently assign all existing records to the next person who signs up.
+   Validate budget month 1-12 and the supported year range in the application.
+5. Set the database name to expense_tracker unless the user specifies another.
+6. Inspect MAMP's actual MySQL port and server version when accessible. Do not
+   assume port 3306 or 8889, a username, or a password without verification.
+7. Verify a Workbench connection when available. Otherwise document the exact
+   connection fields and mark the connection check as pending.
+8. Select a MySQL Connector/C++ version and API compatible with the installed
+   server, compiler, and architecture. Record this choice before integration.
+   Do not assume an X Protocol endpoint exists on the normal MySQL port.
+9. Confirm compatible Qt Widgets and password-library dependencies. Draw the
+   login/dashboard/expense/report navigation and document date/week semantics.
+10. Build GUI and CLI skeletons. Show a login form, but do not fake successful
+    authentication before Phase 3. Prepare fictional test data independently.
+
+Completion checks
+- The project compiles and the CLI skeleton runs and exits cleanly.
+- The GUI opens its login screen; build instructions cover both executables.
+- User ownership, login flow, date filters, and weekly boundaries are documented.
+- Schema and class responsibilities match this roadmap.
+- Setup instructions identify local configuration requirements and any pending
+  connection checks honestly. Do not block unrelated work on missing secrets.
+
+PHASE 2 - OOP, SINGLY LINKED LIST, AND INPUT VALIDATION
+Objective: demonstrate correct expense management in memory.
+
+Tasks
+1. Implement Expense with private data, validated changes, and both constructors.
+2. Implement ExpenseNode and ExpenseList as a real SLL with explicit ownership.
+3. Implement insertion, lookup by ID, category search, traversal, update by ID,
+   deletion by ID, clear, and destructor cleanup.
+4. Implement overloaded search methods and use them in a runnable example or CLI.
+5. Add CLI input handling for amounts, dates, categories, descriptions, IDs, and
+   menu choices. Handle invalid text and end-of-input without infinite loops.
+6. Connect add/view/search/update/delete to the in-memory list for this phase.
+   Temporary IDs may be used here, but MySQL must generate IDs in Phase 3.
+7. Ask for confirmation before deleting a record. A canceled action changes
+   nothing. Invalid updates must leave the original record intact.
+8. Display expenses as a readable table and distinguish empty results from errors.
+9. Implement ExpenseFilter and ReportService independently of GUI and database.
+   Use fictional in-memory fixtures for exact-date/range/category filters and
+   seven-day weekly summaries. These fixtures must not enable a production login
+   bypass. Build expense/report Qt forms against the same service interfaces.
+
+Completion checks
+- Exercise an empty list, one node, and multiple nodes.
+- Delete the head, a middle node, and the tail; then clear the whole list.
+- Search/update/delete a nonexistent ID and verify clear feedback.
+- Validate leap dates, invalid dates, nonnumeric input, zero/negative expenses,
+  excessive precision, and out-of-range amounts.
+- Verify constructor and method overloading and encapsulation are demonstrable.
+- Compile successfully and check node cleanup with available diagnostics.
+- Clearly state that Phase 2 records are not yet persistent.
+- Exact date, inclusive endpoints, combined filters, empty results, Monday/Sunday,
+  leap day, and weeks spanning month/year boundaries have predictable results.
+
+PHASE 3 - MYSQL, LOGIN, AND PERSISTENT GUI/CLI CRUD
+Objective: authenticate users and persist their records through both interfaces.
+
+Tasks
+1. Integrate the selected compatible connector into the build configuration.
+2. Read host, port, database, username, and password from local configuration
+   or environment settings. Provide a secret-free configuration example.
+3. Create the schema on the intended local MAMP server without deleting existing
+   records. Do not drop tables or reset user data for testing.
+4. Implement DatabaseManager using prepared statements for user-supplied values
+   and RAII or equivalent reliable cleanup for connections and query resources.
+5. Implement registration and password verification. After login, load only that
+   account's expenses from MySQL into the SLL. Gate both interfaces on login.
+6. Implement persistent add, read, update, and delete. Retrieve generated IDs.
+7. Apply database changes before changing the in-memory list. On failure, show
+   a clear message and keep the list consistent with the committed database.
+8. Implement loading and saving monthly budget records for use in Phase 4.
+9. Remove the temporary in-memory-only workflow from the final normal startup.
+   Do not silently fall back to unsaved operation when the database is offline.
+10. Keep filtering and reports backed by the SLL to demonstrate its practical use.
+11. Wire LoginWindow, dashboard, and expense forms to real services. Implement
+    logout and clear session data. Block stale windows and pending callbacks
+    from showing the previous user's data after account switching.
+12. Check user ownership inside services and SQL, including ID-based update/delete.
+    A hidden GUI button is not an ownership check. Scope CSV imports to the session.
+
+Completion checks
+- Add, update, and delete through the CLI and inspect the corresponding rows.
+- Restart the application and verify saved records are loaded correctly.
+- Verify IDs remain unique after deletion and later insertion.
+- Test a failed connection and a failed write; neither may report false success.
+- Verify quotes and punctuation in descriptions are handled safely.
+- Use an isolated test database or clearly designated test records.
+- Record actual integration results and any untested environment dependencies.
+- Register two accounts. Check correct/incorrect passwords, duplicate usernames,
+  logout/relogin, and restart. Confirm no plaintext passwords enter storage/logs.
+- Account B cannot read, edit, delete, report on, or export Account A's expenses,
+  including when B supplies A's known expense ID directly to a service method.
+
+PHASE 4 - WEEKLY REPORTS, DATE FILTERS, GUI POLISH, AND DELIVERY
+Objective: finish all proposal features and prepare a reliable demonstration.
+
+Tasks
+1. Add search by ID, category filtering, and inclusive date-range filtering.
+   Reject a date range whose start is after its end.
+   Complete all date-filter controls and refresh/count/total behavior specified
+   above in the GUI, and expose equivalent criteria in the CLI.
+2. Calculate spending for a selected month and year and totals by category.
+   Include the year when identifying a month; do not combine different years.
+   Complete the weekly report contract, week navigation, and summary CSV export.
+3. Set or update one budget per month/year and load it across sessions.
+4. Calculate remaining budget = monthly budget - monthly spending.
+   Show overspending when negative and distinguish no budget from a zero budget.
+5. Export expenses to CSV with a header and documented columns, for example:
+   expense_id,amount,category,expense_date,description
+6. Implement correct CSV quoting/escaping for commas and double quotes. Support
+   quoted line breaks or reject them explicitly with a clear documented error;
+   do not silently corrupt or split records.
+7. Import CSV with fstream. Validate headers, required fields, amounts, dates,
+   text lengths, and row structure before saving anything.
+8. Ignore source expense IDs for insertion. Every imported record receives a
+   new ID generated by MySQL. Explain that reimporting creates new records.
+9. Use an explicit import policy: validate the entire file first; reject it with
+   useful row errors if invalid; otherwise insert all rows in one transaction.
+   Roll back on insertion failure and refresh the SLL only after commit.
+10. Handle missing/unreadable input files and unwritable export destinations.
+    Confirm before overwriting an existing export file.
+11. Finish the CLI with these actions (numbering may vary):
+    Add expense
+    View all expenses
+    Search by ID
+    Filter by category or date range
+    Filter by exact date / this week / this month / clear filters
+    Update expense
+    Delete expense
+    View monthly/category summaries
+    View weekly report / previous week / next week
+    Set monthly budget
+    View remaining monthly budget
+    Export CSV
+    Import CSV
+    Logout
+    Exit
+12. Document build/run steps, MAMP configuration, Workbench connection, schema
+    setup, connector prerequisites, currency, CSV format, and troubleshooting.
+13. Explain where each assignment requirement is demonstrated in the source.
+14. Finish all GUI navigation and validation. Package the required Qt runtime
+    and database/password-library dependencies for the target Windows computer.
+    Document the local MAMP requirement; never bundle real database credentials.
+15. Demonstrate the same records and calculations through GUI and CLI. Document
+    account creation, login/logout, filtering, week definitions, and report export.
+
+Completion checks
+- Verify reports using a small dataset with manually calculated expected totals.
+- Verify budgets before spending, after spending, after overspending, and after
+  changing or deleting expenses. Verify budget persistence after restart.
+- Export/import records with commas and quotes and verify their field values.
+- Check invalid import rows and transaction failure do not partially import data.
+- Verify imported records receive new IDs and appear in the SLL after commit.
+- Run a complete CLI demonstration: add -> view -> search -> update -> restart
+  -> confirm persistence -> report -> budget -> CSV export/import -> delete.
+- Ensure the final build succeeds and provide accurate test results.
+- Weekly fixture: Monday 10.00, Wednesday 20.00, Sunday 5.00, plus next Monday
+  99.00. Selected week total is 35.00, count 3, daily average 5.00; the next Monday
+  is excluded. Check daily/category sums and export contents independently.
+- Test one-day filters, both inclusive boundaries, invalid/reversed ranges,
+  combined date/category criteria, clear filters, and no matching records.
+- Edit/delete an expense and verify every affected weekly/monthly total updates.
+- Verify login, expense form, filtering, reports, budgets, CSV, and logout using
+  keyboard navigation and resized windows. Confirm no clipping or frozen UI.
+
+FINAL DELIVERABLES
+- Complete C++ source and build configuration.
+- MySQL schema/migrations for users, expenses, and budgets.
+- Functional Qt GUI and CLI using the same core services.
+- Login/registration/logout and verified per-account record isolation.
+- Weekly reports, exact-date/date-range filters, and report CSV export.
+- Secret-free local configuration example.
+- Sample CSV with fictional records.
+- Meaningful tests or a reproducible verification script/checklist.
+- README with setup, usage, architecture, and requirement mapping.
+- A short demonstration guide and a list of any remaining limitations.
+
+IMPLEMENTATION REFERENCES
+Qt Widgets with CMake:
+https://doc.qt.io/qt-6/cmake-get-started.html
+Password hashing and verification with libsodium:
+https://doc.libsodium.org/password_hashing/default_phf
+Verify dependency versions against the actual development environment.
+
+REQUIREMENT INTERPRETATION NOTE
+The original roadmap uses CSV import/export for file I/O and an expense SLL.
+The newer proposal differs as described at the top. Retain the required CLI
+alongside the GUI, and resolve the proposal baseline before implementation.
+

@@ -1,0 +1,4 @@
+<RCC><qresource prefix="/brand">
+<file alias="ex-icon.png">../../all asset/ex-icon.png</file>
+<file alias="ex-icon.ico">../../all asset/ex-icon.ico</file>
+</qresource></RCC>
